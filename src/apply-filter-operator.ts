@@ -1,4 +1,4 @@
-import { eq, gt, gte, ilike, lt, lte, SQL } from 'drizzle-orm';
+import { eq, gt, gte, ilike, lt, lte, ne, SQL } from 'drizzle-orm';
 import { FilterOperator } from './types/interfaces';
 
 /**
@@ -16,6 +16,9 @@ export function applyFilterOperator(
 	switch (operator) {
 		case 'eq':
 			return eq(column, value);
+
+		case 'neq':
+			return ne(column, value);
 
 		case 'gt':
 			return gt(column, value);

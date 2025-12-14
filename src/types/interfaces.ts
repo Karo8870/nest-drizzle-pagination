@@ -1,4 +1,4 @@
-export type FilterOperator = 'eq' | 'gt' | 'lt' | 'gte' | 'lte' | 'like';
+export type FilterOperator = 'eq' | 'neq' | 'gt' | 'lt' | 'gte' | 'lte' | 'like';
 
 export type SortOrder = 'ASC' | 'DESC' | 'asc' | 'desc';
 
