@@ -45,3 +45,22 @@ export interface CursorPaginationOptions extends BasePaginationOptions {
 export type PaginationOptions =
 	| OffsetPaginationOptions
 	| CursorPaginationOptions;
+
+export interface PropMetadata {
+	column: any;
+}
+
+/**
+ * Options for @Sortable decorator
+ */
+export interface SortableOptions {
+	alias?: string;
+}
+
+/**
+ * Metadata stored by @Sortable decorator
+ */
+export interface SortableMetadata {
+	enabled: boolean;
+	alias: string;
+}
