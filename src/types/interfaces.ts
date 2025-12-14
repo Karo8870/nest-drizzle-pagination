@@ -2,6 +2,8 @@ export type FilterOperator = 'eq' | 'gt' | 'lt' | 'gte' | 'lte' | 'like';
 
 export type SortOrder = 'ASC' | 'DESC' | 'asc' | 'desc';
 
+export type PaginationType = 'cursor' | 'offset';
+
 export interface FilterMetadata {
 	operator: FilterOperator;
 	alias: string;
@@ -63,4 +65,54 @@ export interface SortableOptions {
 export interface SortableMetadata {
 	enabled: boolean;
 	alias: string;
+}
+
+/**
+ * Parsed filter instruction
+ */
+export interface FilterInstruction {
+	propertyKey: string;
+	column: any;
+	operator: FilterOperator;
+	value: any;
+}
+
+/**
+ * Parsed sort instruction
+ */
+export interface SortInstruction {
+	propertyKey: string;
+	column: any;
+	order: SortOrder;
+}
+
+/**
+ * Result of parsing query parameters based on DTO metadata
+ */
+export interface PaginatedQueryResult {
+	filters: FilterInstruction[];
+	sorting: SortInstruction[];
+	limit: number;
+	offset?: number;
+	page?: number;
+	cursor?: string;
+	paginationType: PaginationType;
+	paginationOptions: PaginationOptions;
+}
+
+/**
+ * Response for offset-based pagination
+ */
+export interface OffsetPaginatedResponse<T> {
+	data: T[];
+	page: number;
+	limit: number;
+}
+
+/**
+ * Response for cursor-based pagination
+ */
+export interface CursorPaginatedResponse<T> {
+	data: T[];
+	nextCursor: string | null;
 }
