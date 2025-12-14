@@ -11,11 +11,14 @@
   "description": "",
   "devDependencies": {
     "tsup": "^8.5.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "prettier": "^3.7.4"
   },
   "dependencies": {
+  },
+  "peerDependencies": {
     "@nestjs/common": "^11.1.9",
-    "prettier": "^3.7.4",
+    "drizzle-orm": "^0.45.1",
     "reflect-metadata": "^0.2.2"
   }
 }
