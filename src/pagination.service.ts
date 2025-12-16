@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { and, asc, desc } from 'drizzle-orm';
+import { and, asc, desc, SQL } from 'drizzle-orm';
 
 import {
 	CursorPaginatedResponse,
@@ -18,11 +18,13 @@ export class PaginationService {
 	 * Main execute method that delegates to offset or cursor pagination
 	 * @param baseQuery - Base Drizzle query builder
 	 * @param queryInstructions - Parsed query instructions from DTO
+	 * @param extraConditions - Other conditions appended via and
 	 * @returns Paginated response
 	 */
 	async execute<T = any>(
 		baseQuery: any,
-		queryInstructions: PaginatedQueryResult
+		queryInstructions: PaginatedQueryResult,
+		extraConditions: SQL<unknown> | undefined = undefined
 	): Promise<OffsetPaginatedResponse<T> | CursorPaginatedResponse<T>> {
 		const { paginationType, paginationOptions } = queryInstructions;
 
@@ -49,9 +51,18 @@ export class PaginationService {
 				);
 			}
 
-			return this.executeCursor<T>(baseQuery, queryInstructions, cursorIdField);
+			return this.executeCursor<T>(
+				baseQuery,
+				queryInstructions,
+				extraConditions,
+				cursorIdField
+			);
 		} else {
-			return this.executeOffset<T>(baseQuery, queryInstructions);
+			return this.executeOffset<T>(
+				baseQuery,
+				queryInstructions,
+				extraConditions
+			);
 		}
 	}
 
@@ -59,11 +70,13 @@ export class PaginationService {
 	 * Execute offset-based pagination
 	 * @param baseQuery - Base Drizzle query builder
 	 * @param queryInstructions - Parsed query instructions
+	 * @param extraConditions
 	 * @returns Offset paginated response
 	 */
 	async executeOffset<T = any>(
 		baseQuery: any,
-		queryInstructions: PaginatedQueryResult
+		queryInstructions: PaginatedQueryResult,
+		extraConditions?: SQL<unknown>
 	): Promise<OffsetPaginatedResponse<T>> {
 		const { filters, sorting, limit, offset, page } = queryInstructions;
 
@@ -73,7 +86,12 @@ export class PaginationService {
 			const filterConditions = filters.map((filter) =>
 				applyFilterOperator(filter.column, filter.operator, filter.value)
 			);
-			query = query.where(and(...filterConditions));
+
+			if (extraConditions) {
+				query = query.where(and(...filterConditions, extraConditions));
+			} else {
+				query = query.where(and(...filterConditions));
+			}
 		}
 
 		if (sorting.length > 0) {
@@ -103,13 +121,15 @@ export class PaginationService {
 	 * Execute cursor-based pagination
 	 * @param baseQuery - Base Drizzle query builder
 	 * @param queryInstructions - Parsed query instructions
+	 * @param extraConditions
 	 * @param cursorIdField - ID field for cursor uniqueness
 	 * @returns Cursor paginated response
 	 */
 	async executeCursor<T = any>(
 		baseQuery: any,
 		queryInstructions: PaginatedQueryResult,
-		cursorIdField: any
+		cursorIdField: any,
+		extraConditions?: SQL<unknown>
 	): Promise<CursorPaginatedResponse<T>> {
 		const { filters, sorting, limit, cursor } = queryInstructions;
 
@@ -119,7 +139,12 @@ export class PaginationService {
 			const filterConditions = filters.map((filter) =>
 				applyFilterOperator(filter.column, filter.operator, filter.value)
 			);
-			query = query.where(and(...filterConditions));
+
+			if (extraConditions) {
+				query = query.where(and(...filterConditions, extraConditions));
+			} else {
+				query = query.where(and(...filterConditions));
+			}
 		}
 
 		const sortingWithId = this.ensureIdInSorting(sorting, cursorIdField);
