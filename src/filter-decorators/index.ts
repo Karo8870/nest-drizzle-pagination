@@ -5,3 +5,6 @@ export * from './like.decorator';
 export * from './filter.decorator';
 export * from './greater-than-or-equal.decorator';
 export * from './less-than-or-equal.decorator';
+export * from './not-equal.decorator';
+export * from './many-to-many.decorator';
+export * from './custom.decorator';

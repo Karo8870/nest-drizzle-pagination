@@ -1,288 +1,327 @@
 import 'reflect-metadata';
 
 import {
-	DECORATED_PROPERTIES_METADATA,
-	FILTERS_METADATA,
-	PAGINATION_METADATA,
-	PROP_METADATA,
-	SORTABLE_METADATA
+  DECORATED_PROPERTIES_METADATA,
+  FILTERS_METADATA,
+  PAGINATION_METADATA,
+  PROP_METADATA,
+  SORTABLE_METADATA
 } from './reflect';
 import {
-	FilterInstruction,
-	FilterMetadata,
-	PaginatedQueryResult,
-	PaginationOptions,
-	PaginationType,
-	PropMetadata,
-	SortableMetadata,
-	SortInstruction
+  FilterInstruction,
+  FilterMetadata,
+  PaginatedQueryResult,
+  PaginationOptions,
+  PaginationType,
+  PropMetadata,
+  SortableMetadata,
+  SortInstruction
 } from './types/interfaces';
 import { throwBadRequestException } from './core/bad-request.exception';
 
 export class QueryParserService {
-	validateQueryType(
-		allowedType: 'cursor' | 'offset' | 'both',
-		queryParams: any
-	): PaginationType {
-		if (allowedType === 'offset') {
-			if (queryParams.cursor) {
-				throwBadRequestException(
-					'Cursor-based pagination is not enabled for this endpoint. Use "page" parameter instead.'
-				);
-			}
+  validateQueryType(
+    allowedType: 'cursor' | 'offset' | 'both',
+    queryParams: any
+  ): PaginationType {
+    if (allowedType === 'offset') {
+      if (queryParams.cursor) {
+        throwBadRequestException(
+          'Cursor-based pagination is not enabled for this endpoint. Use "page" parameter instead.'
+        );
+      }
 
-			return 'offset';
-		}
+      return 'offset';
+    }
 
-		if (allowedType === 'cursor') {
-			if (queryParams.page) {
-				throwBadRequestException(
-					'Offset-based pagination is not enabled for this endpoint. Remove "page" parameter to use cursor pagination.'
-				);
-			}
+    if (allowedType === 'cursor') {
+      if (queryParams.page) {
+        throwBadRequestException(
+          'Offset-based pagination is not enabled for this endpoint. Remove "page" parameter to use cursor pagination.'
+        );
+      }
 
-			return 'cursor';
-		}
+      return 'cursor';
+    }
 
-		return queryParams.page ? 'offset' : 'cursor';
-	}
+    return queryParams.page ? 'offset' : 'cursor';
+  }
 
-	parseSortArray(sortString: string | string[]) {
-		if (typeof sortString === 'string') {
-			return sortString
-				.split(',')
-				.map((s: string) => s.trim())
-				.filter((s: string) => s);
-		} else if (Array.isArray(sortString)) {
-			return sortString;
-		}
+  parseSortArray(sortString: string | string[]) {
+    if (typeof sortString === 'string') {
+      return sortString
+        .split(',')
+        .map((s: string) => s.trim())
+        .filter((s: string) => s);
+    } else if (Array.isArray(sortString)) {
+      return sortString;
+    }
 
-		return [];
-	}
+    return [];
+  }
 
-	/**
-	 * Parse query parameters based on DTO metadata
-	 * @param dtoClass - The DTO class with pagination decorators
-	 * @param queryParams - Raw query parameters from the request
-	 */
-	parse(dtoClass: any, queryParams: any): PaginatedQueryResult {
-		const instance = new dtoClass();
-		const prototype = Object.getPrototypeOf(instance);
+  /**
+   * Parse query parameters based on DTO metadata
+   * @param dtoClass - The DTO class with pagination decorators
+   * @param queryParams - Raw query parameters from the request
+   */
+  parse(dtoClass: any, queryParams: any): PaginatedQueryResult {
+    const instance = new dtoClass();
+    const prototype = Object.getPrototypeOf(instance);
 
-		const paginationOptions: PaginationOptions =
-			Reflect.getMetadata(PAGINATION_METADATA, prototype) || {};
+    const paginationOptions: PaginationOptions =
+      Reflect.getMetadata(PAGINATION_METADATA, prototype) || {};
 
-		const allowedType = paginationOptions.paginationType ?? 'both';
-		let paginationType = this.validateQueryType(allowedType, queryParams);
+    const allowedType = paginationOptions.paginationType ?? 'both';
+    let paginationType = this.validateQueryType(allowedType, queryParams);
 
-		const filters = this.parseFilters(prototype, queryParams);
+    const filters = this.parseFilters(prototype, queryParams);
 
-		const sorting = this.parseSorting(
-			prototype,
-			queryParams,
-			paginationOptions
-		);
+    const sorting = this.parseSorting(
+      prototype,
+      queryParams,
+      paginationOptions
+    );
 
-		const limit = this.parseLimit(queryParams, paginationOptions);
+    const limit = this.parseLimit(queryParams, paginationOptions);
 
-		const result: PaginatedQueryResult = {
-			filters,
-			sorting,
-			limit,
-			paginationType,
-			paginationOptions
-		};
+    const result: PaginatedQueryResult = {
+      filters,
+      sorting,
+      limit,
+      paginationType,
+      paginationOptions
+    };
 
-		if (paginationType === 'cursor') {
-			result.cursor = queryParams.cursor;
-		} else {
-			const page = queryParams.page ? parseInt(queryParams.page, 10) : 1;
-			result.page = page;
-			result.offset = (page - 1) * limit;
-		}
+    if (paginationType === 'cursor') {
+      result.cursor = queryParams.cursor;
+    } else {
+      const page = queryParams.page ? parseInt(queryParams.page, 10) : 1;
+      result.page = page;
+      result.offset = (page - 1) * limit;
+    }
 
-		return result;
-	}
+    return result;
+  }
 
-	/**
-	 * Parse filter parameters based on @Prop and filter decorators
-	 */
-	private parseFilters(prototype: any, queryParams: any): FilterInstruction[] {
-		const filters: FilterInstruction[] = [];
+  /**
+   * Parse filter parameters based on @Prop and filter decorators
+   */
+  private parseFilters(prototype: any, queryParams: any): FilterInstruction[] {
+    const filters: FilterInstruction[] = [];
 
-		const decoratedProps: Set<string> =
-			Reflect.getMetadata(DECORATED_PROPERTIES_METADATA, prototype) ||
-			new Set();
+    const decoratedProps: Set<string> =
+      Reflect.getMetadata(DECORATED_PROPERTIES_METADATA, prototype) ||
+      new Set();
 
-		for (const propertyKey of decoratedProps) {
-			const propMetadata: PropMetadata | undefined = Reflect.getMetadata(
-				PROP_METADATA,
-				prototype,
-				propertyKey
-			);
+    for (const propertyKey of decoratedProps) {
+      const propMetadata: PropMetadata | undefined = Reflect.getMetadata(
+        PROP_METADATA,
+        prototype,
+        propertyKey
+      );
 
-			if (!propMetadata) continue;
+      if (!propMetadata) continue;
 
-			const filterMetadataArray: FilterMetadata[] =
-				Reflect.getMetadata(FILTERS_METADATA, prototype, propertyKey) || [];
+      const filterMetadataArray: FilterMetadata[] =
+        Reflect.getMetadata(FILTERS_METADATA, prototype, propertyKey) || [];
 
-			for (const filterMetadata of filterMetadataArray) {
-				const { operator, alias, default: defaultValue } = filterMetadata;
+      for (const filterMetadata of filterMetadataArray) {
+        const {
+          operator,
+          alias,
+          default: defaultValue,
+          builder,
+          table,
+          conditions
+        } = filterMetadata;
 
-				let value = queryParams[alias];
+        let value = queryParams[alias];
 
-				if (value === undefined && defaultValue !== undefined) {
-					value = defaultValue;
-				}
+        if (value === undefined && defaultValue !== undefined) {
+          value = defaultValue;
+        }
 
-				if (value !== undefined && value !== null && value !== '') {
-					filters.push({
-						propertyKey,
-						column: propMetadata.column,
-						operator,
-						value
-					});
-				}
-			}
-		}
+        if (value !== undefined && value !== null && value !== '') {
+          const filterInstruction: FilterInstruction = {
+            propertyKey,
+            column: propMetadata.column,
+            operator,
+            value
+          };
 
-		return filters;
-	}
+          if (operator === 'exists') {
+            if (builder) {
+              filterInstruction.builder = builder;
+            }
+            if (table) {
+              filterInstruction.table = table;
+            }
+          }
 
-	/**
-	 * Parse sorting parameters based on @Sortable decorators
-	 */
-	private parseSorting(
-		prototype: any,
-		queryParams: any,
-		paginationOptions: PaginationOptions
-	): SortInstruction[] {
-		const sorting: SortInstruction[] = [];
+          if (operator === 'switch') {
+            if (conditions) {
+              filterInstruction.conditions = conditions;
+            }
+          }
 
-		const allowCustomSort = paginationOptions.allowCustomSort ?? true;
-		const allowMultipleSort = paginationOptions.allowMultipleSort ?? true;
+          if (operator === 'custom') {
+            if (builder) {
+              filterInstruction.builder = builder;
+            }
+          }
 
-		if (!allowCustomSort || !queryParams.sortBy) {
-			return this.getDefaultSorting(paginationOptions);
-		}
+          filters.push(filterInstruction);
+        }
+      }
+    }
 
-		let sortByArray: string[] = this.parseSortArray(queryParams.sortBy);
+    return filters;
+  }
 
-		let sortOrderArray: string[] = [];
-		if (queryParams.sortOrder) {
-			sortOrderArray = this.parseSortArray(queryParams.sortOrder);
-		}
+  /**
+   * Parse sorting parameters based on @Sortable decorators
+   */
+  private parseSorting(
+    prototype: any,
+    queryParams: any,
+    paginationOptions: PaginationOptions
+  ): SortInstruction[] {
+    const sorting: SortInstruction[] = [];
 
-		if (!allowMultipleSort && sortByArray.length > 1) {
-			throwBadRequestException(
-				`Multiple sort fields are not allowed. Received ${sortByArray.length} fields: ${sortByArray.join(', ')}. Only single field sorting is permitted.`
-			);
-		}
+    const allowCustomSort = paginationOptions.allowCustomSort ?? true;
+    const allowMultipleSort = paginationOptions.allowMultipleSort ?? true;
 
-		const decoratedProps: Set<string> =
-			Reflect.getMetadata(DECORATED_PROPERTIES_METADATA, prototype) ||
-			new Set();
+    if (!allowCustomSort || !queryParams.sortBy) {
+      return this.getDefaultSorting(paginationOptions);
+    }
 
-		const sortableAliasMap = new Map<string, string>();
-		const availableSortableAliases: string[] = [];
+    let sortByArray: string[] = this.parseSortArray(queryParams.sortBy);
 
-		for (const propertyKey of decoratedProps) {
-			const sortableMetadata: SortableMetadata | undefined =
-				Reflect.getMetadata(SORTABLE_METADATA, prototype, propertyKey);
+    let sortOrderArray: string[] = [];
+    if (queryParams.sortOrder) {
+      sortOrderArray = this.parseSortArray(queryParams.sortOrder);
+    }
 
-			if (sortableMetadata?.enabled) {
-				sortableAliasMap.set(sortableMetadata.alias, propertyKey);
-				availableSortableAliases.push(sortableMetadata.alias);
-			}
-		}
+    if (!allowMultipleSort && sortByArray.length > 1) {
+      throwBadRequestException(
+        `Multiple sort fields are not allowed. Received ${sortByArray.length} fields: ${sortByArray.join(', ')}. Only single field sorting is permitted.`
+      );
+    }
 
-		for (let i = 0; i < sortByArray.length; i++) {
-			const sortByAlias = sortByArray[i];
-			const order = (sortOrderArray[i] || 'ASC').toUpperCase();
+    const decoratedProps: Set<string> =
+      Reflect.getMetadata(DECORATED_PROPERTIES_METADATA, prototype) ||
+      new Set();
 
-			const propertyKey = sortableAliasMap.get(sortByAlias);
+    const sortableAliasMap = new Map<string, string>();
+    const sortableMetadataMap = new Map<string, SortableMetadata>();
+    const availableSortableAliases: string[] = [];
 
-			if (!propertyKey) {
-				throwBadRequestException(
-					`'${sortByAlias}' is not a valid sortable field. Available sortable fields: ${availableSortableAliases.join(', ')}`
-				);
-			}
+    for (const propertyKey of decoratedProps) {
+      const sortableMetadata: SortableMetadata | undefined =
+        Reflect.getMetadata(SORTABLE_METADATA, prototype, propertyKey);
 
-			const propMetadata: PropMetadata | undefined = Reflect.getMetadata(
-				PROP_METADATA,
-				prototype,
-				propertyKey
-			);
+      if (sortableMetadata?.enabled) {
+        sortableAliasMap.set(sortableMetadata.alias, propertyKey);
+        sortableMetadataMap.set(propertyKey, sortableMetadata);
+        availableSortableAliases.push(sortableMetadata.alias);
+      }
+    }
 
-			if (!propMetadata) {
-				throwBadRequestException(
-					`Property '${propertyKey}' does not have @Prop decorator`
-				);
-			}
+    for (let i = 0; i < sortByArray.length; i++) {
+      const sortByAlias = sortByArray[i];
+      const order = (sortOrderArray[i] || 'ASC').toUpperCase();
 
-			if (order !== 'ASC' && order !== 'DESC') {
-				throwBadRequestException(
-					`Invalid sort order '${order}' for field '${sortByAlias}'. Must be 'ASC' or 'DESC'`
-				);
-			}
+      const propertyKey = sortableAliasMap.get(sortByAlias);
 
-			sorting.push({
-				propertyKey,
-				column: propMetadata.column,
-				order: order as 'ASC' | 'DESC'
-			});
-		}
+      if (!propertyKey) {
+        throwBadRequestException(
+          `'${sortByAlias}' is not a valid sortable field. Available sortable fields: ${availableSortableAliases.join(', ')}`
+        );
+      }
 
-		return sorting.length > 0
-			? sorting
-			: this.getDefaultSorting(paginationOptions);
-	}
+      const propMetadata: PropMetadata | undefined = Reflect.getMetadata(
+        PROP_METADATA,
+        prototype,
+        propertyKey
+      );
 
-	/**
-	 * Get default sorting from pagination options
-	 */
-	private getDefaultSorting(
-		paginationOptions: PaginationOptions
-	): SortInstruction[] {
-		const defaultSort = paginationOptions.defaultSort || [];
+      if (!propMetadata) {
+        throwBadRequestException(
+          `Property '${propertyKey}' does not have @Prop decorator`
+        );
+      }
 
-		return defaultSort.map((sortDef) => ({
-			propertyKey: '',
-			column: sortDef.field,
-			order: sortDef.order.toUpperCase() as 'ASC' | 'DESC'
-		}));
-	}
+      if (order !== 'ASC' && order !== 'DESC') {
+        throwBadRequestException(
+          `Invalid sort order '${order}' for field '${sortByAlias}'. Must be 'ASC' or 'DESC'`
+        );
+      }
 
-	/**
-	 * Parse limit parameter with validation
-	 */
-	private parseLimit(
-		queryParams: any,
-		paginationOptions: PaginationOptions
-	): number {
-		const allowCustomLimit = paginationOptions.allowCustomLimit ?? true;
-		const defaultLimit = paginationOptions.limit ?? 10;
-		const maxLimit = paginationOptions.maxLimit ?? 100;
+      const sortableMetadata = sortableMetadataMap.get(propertyKey);
+      const sqlProperty = sortableMetadata?.sqlProperty;
 
-		if (!allowCustomLimit || !queryParams.limit) {
-			return defaultLimit;
-		}
+      sorting.push({
+        propertyKey: propertyKey || sortByAlias,
+        column: propMetadata.column,
+        order: order as 'ASC' | 'DESC',
+        sqlProperty
+      });
+    }
 
-		const requestedLimit = parseInt(queryParams.limit, 10);
+    return sorting.length > 0
+      ? sorting
+      : this.getDefaultSorting(paginationOptions);
+  }
 
-		if (isNaN(requestedLimit) || requestedLimit <= 0) {
-			throwBadRequestException(
-				`Invalid limit value: '${queryParams.limit}'. Limit must be a positive integer`
-			);
-		}
+  /**
+   * Get default sorting from pagination options
+   */
+  private getDefaultSorting(
+    paginationOptions: PaginationOptions
+  ): SortInstruction[] {
+    const defaultSort = paginationOptions.defaultSort || [];
 
-		// Enforce max limit
-		if (requestedLimit > maxLimit) {
-			throwBadRequestException(
-				`Limit value ${requestedLimit} exceeds maximum allowed limit of ${maxLimit}`
-			);
-		}
+    console.log(defaultSort.map((el) => el.sqlProperty));
 
-		return requestedLimit;
-	}
+    return defaultSort.map((sortDef) => ({
+      propertyKey: '',
+      column: sortDef.field,
+      order: sortDef.order.toUpperCase() as 'ASC' | 'DESC',
+      sqlProperty: sortDef.sqlProperty ?? undefined
+    }));
+  }
+
+  /**
+   * Parse limit parameter with validation
+   */
+  private parseLimit(
+    queryParams: any,
+    paginationOptions: PaginationOptions
+  ): number {
+    const allowCustomLimit = paginationOptions.allowCustomLimit ?? true;
+    const defaultLimit = paginationOptions.limit ?? 10;
+    const maxLimit = paginationOptions.maxLimit ?? 100;
+
+    if (!allowCustomLimit || !queryParams.limit) {
+      return defaultLimit;
+    }
+
+    const requestedLimit = parseInt(queryParams.limit, 10);
+
+    if (isNaN(requestedLimit) || requestedLimit <= 0) {
+      throwBadRequestException(
+        `Invalid limit value: '${queryParams.limit}'. Limit must be a positive integer`
+      );
+    }
+
+    // Enforce max limit
+    if (requestedLimit > maxLimit) {
+      throwBadRequestException(
+        `Limit value ${requestedLimit} exceeds maximum allowed limit of ${maxLimit}`
+      );
+    }
+
+    return requestedLimit;
+  }
 }

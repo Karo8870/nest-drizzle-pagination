@@ -5,7 +5,7 @@ import { SortableMetadata, SortableOptions } from './types/interfaces';
 /**
  * @Sortable decorator - marks a property as sortable
  * Allows the field to be used in dynamic sortBy requests
- * @param options - Optional configuration for alias
+ * @param options - Optional configuration for alias and sqlProperty
  *
  * @example
  * ```typescript
@@ -16,17 +16,27 @@ import { SortableMetadata, SortableOptions } from './types/interfaces';
  * @Prop(users.createdAt)
  * @Sortable({ alias: 'created' }) // Uses 'created' in sortBy
  * createdAt?: string;
+ *
+ * @Prop(userFullName)
+ * @Sortable({ sqlProperty: 'name' }) // Extracts 'name' from record for cursor
+ * name?: string;
+ *
+ * @Prop(userFullName)
+ * @Sortable({ sqlProperty: (rec) => rec.name }) // Uses function to extract value
+ * name?: string;
  * ```
  */
 export function Sortable(options: SortableOptions = {}): PropertyDecorator {
-	return (target: Object, propertyKey: string | symbol) => {
-		const metadata: SortableMetadata = {
-			enabled: true,
-			alias: options.alias ?? String(propertyKey)
-		};
+  return (target: Object, propertyKey: string | symbol) => {
+    const alias = options.alias ?? String(propertyKey);
+    const metadata: SortableMetadata = {
+      enabled: true,
+      alias,
+      sqlProperty: options.sqlProperty ?? alias
+    };
 
-		Reflect.defineMetadata(SORTABLE_METADATA, metadata, target, propertyKey);
-	};
+    Reflect.defineMetadata(SORTABLE_METADATA, metadata, target, propertyKey);
+  };
 }
 
 /**
