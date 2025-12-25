@@ -4,19 +4,19 @@
 
 ## Quick Navigation
 
-- [Introduction](https://graphzz.vercel.app/docs/nest-drizzle-pagination/introduction) - Overview and key features
-- [Installation](https://graphzz.vercel.app/docs/nest-drizzle-pagination/installation) - Setup instructions
-- [Quick Start](https://graphzz.vercel.app/docs/nest-drizzle-pagination/quick-start) - Get started in minutes
-- [Core Concepts](https://graphzz.vercel.app/docs/nest-drizzle-pagination/core-concepts) - Understanding the library
-- [Pagination Types](https://graphzz.vercel.app/docs/nest-drizzle-pagination/pagination-types) - Offset vs Cursor pagination
-- [Decorators Reference](https://graphzz.vercel.app/docs/nest-drizzle-pagination/decorators) - Complete decorator guide
-- [Filtering](https://graphzz.vercel.app/docs/nest-drizzle-pagination/filtering) - Filter operators and examples
-- [Sorting](https://graphzz.vercel.app/docs/nest-drizzle-pagination/sorting) - Single and multi-field sorting
-- [Advanced Features](https://graphzz.vercel.app/docs/nest-drizzle-pagination/advanced-features) - Many-to-many, custom filters, and more
-- [API Reference](https://graphzz.vercel.app/docs/nest-drizzle-pagination/api-reference) - Services, types, and interfaces
-- [Complete Examples](https://graphzz.vercel.app/docs/nest-drizzle-pagination/examples) - Real-world usage examples
-- [Best Practices](https://graphzz.vercel.app/docs/nest-drizzle-pagination/best-practices) - Recommended patterns
-- [Troubleshooting](https://graphzz.vercel.app/docs/nest-drizzle-pagination/troubleshooting) - Common issues and solutions
+- [Introduction](https://graphzz.vercel.app/docs/introduction) - Overview and key features
+- [Installation](https://graphzz.vercel.app/docs/installation) - Setup instructions
+- [Quick Start](https://graphzz.vercel.app/docs/quick-start) - Get started in minutes
+- [Core Concepts](https://graphzz.vercel.app/docs/core-concepts) - Understanding the library
+- [Pagination Types](https://graphzz.vercel.app/docs/pagination-types) - Offset vs Cursor pagination
+- [Decorators Reference](https://graphzz.vercel.app/docs/decorators) - Complete decorator guide
+- [Filtering](https://graphzz.vercel.app/docs/filtering) - Filter operators and examples
+- [Sorting](https://graphzz.vercel.app/docs/sorting) - Single and multi-field sorting
+- [Advanced Features](https://graphzz.vercel.app/docs/advanced-features) - Many-to-many, custom filters, and more
+- [API Reference](https://graphzz.vercel.app/docs/api-reference) - Services, types, and interfaces
+- [Complete Examples](https://graphzz.vercel.app/docs/examples) - Real-world usage examples
+- [Best Practices](https://graphzz.vercel.app/docs/best-practices) - Recommended patterns
+- [Troubleshooting](https://graphzz.vercel.app/docs/troubleshooting) - Common issues and solutions
 
 ## Key Features
 
